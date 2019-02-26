@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from sqlalchemy import create_engine, func
 
+from sqlalchemy.pool import SingletonThreadPool
 
 
 #################################################
@@ -29,7 +30,7 @@ app = Flask(__name__)
 
 #################################################
 
-engine = create_engine("sqlite:///hawaii.sqlite")
+engine = create_engine("sqlite:///hawaii.sqlite",poolclass=SingletonThreadPool)
 
 
 
@@ -54,8 +55,8 @@ Station = Base.classes.station
 # Create our session (link) from Python to the DB
 
 session = Session(engine)
-
-
+#session = scoped_session(sessionmaker())
+#ession.configure(bind=engine)
 
 
 
@@ -124,10 +125,9 @@ def welcome():
 
 
     )
-session.close()
 
 
-session = Session(engine)
+
 @app.route('/api/v1.0/precipitation')
 
 def return_precipitation():
@@ -143,11 +143,8 @@ def return_precipitation():
 
 
     return jsonify(convert_to_dict(recent_prcp_data, label='prcp'))
-session.close()
 
 
-
-session = Session(engine)
 @app.route('/api/v1.0/stations')
 
 def return_station_list():
@@ -157,11 +154,8 @@ def return_station_list():
 
 
     return jsonify([station[0] for station in station_list])
-session.close()
 
 
-
-session = Session(engine)
 @app.route('/api/v1.0/tobs')
 
 def return_tobs():
@@ -177,11 +171,8 @@ def return_tobs():
 
 
     return jsonify(convert_to_dict(recent_tobs_data, label='tobs'))
-session.close()
 
 
-
-session = Session(engine)
 @app.route('/api/v1.0/<date>/')
 
 def given_date(date):
@@ -189,9 +180,6 @@ def given_date(date):
     
 
     results = session.query(Measurement.date, func.avg(Measurement.tobs), func.max(Measurement.tobs), func.min(Measurement.tobs)).filter(Measurement.date == date).all()
-
-
-
 
 
     data_list = []
@@ -213,18 +201,15 @@ def given_date(date):
 
 
     return jsonify(data_list)
-session.close()
 
-session = Session(engine)
+
 @app.route('/api/v1.0/<start_date>/<end_date>/')
 
 def query_dates(start_date, end_date):
 
-    
+ 
 
     results = session.query(func.avg(Measurement.tobs), func.max(Measurement.tobs), func.min(Measurement.tobs)).filter(Measurement.date >= start_date, Measurement.date <= end_date).all()
-
-
 
     data_list = []
 
@@ -245,9 +230,6 @@ def query_dates(start_date, end_date):
         data_list.append(row)
 
     return jsonify(data_list)
-session.close()
-
-
 
 
 if __name__ == '__main__':

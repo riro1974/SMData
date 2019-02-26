@@ -131,5 +131,33 @@ def scrape():
      "Mars_Weather": mars_weather,
      "mars_h": hemisphere_image_urls
      }
+# List for hemisphere image links
 
+    hemisphere_image_urls = []
+    # First, get a list of all of the hemispheres
+    links = browser.find_by_css("a.product-item")
+    # Next, loop through those links, click the link, find the sample anchor, return the href
+    for i in range(len(links)):
+        hemisphere = {}
+        # We have to find the elements on each loop to avoid s stale element 
+        browser.find_by_css("a.product-item")[i].click()
+        # Next, we find the sample image anchor tag and extract the href
+        sample_elem = browser.find_link_by_text('Sample').first
+        hemisphere['img_url'] = sample_elem['href']
+        # Get Hemisphere title
+        hemisphere['title'] = browser.find_by_the_css("h2.title").text
+        # Append hemisphere object to list
+        hemisphere_image_urls.append(hemisphere)
+        #  Finally, we navigate backwards
+        browser.back()
+        time.sleep(1)
+    # Set hemispheres
+    mars_data["hemispheres"] = hemisphere_image_urls
+    df = pd.read_html('http://space-facts.com/mars/')[0]
+    df.columns = ['description', 'value']
+    df.set_index('description', inplace=True)
+    table = df.to_html()
+    table = table.replace('n','')
+    mars_data['facts'] = table
+    browser.quit()
     return mars_data
